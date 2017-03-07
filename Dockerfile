@@ -3,16 +3,20 @@ FROM ubuntu:xenial
 
 MAINTAINER Iain Workman <iain.workman@googlemail.com>
 
-RUN apt-get --assume-yes update
-RUN	apt-get --assume-yes install build-essential ant maven python-dev
-RUN	apt-get --assume-yes install git
-RUN git clone git://github.com/floodlight/floodlight.git
-RUN cd floodlight
-RUN git submodule init
-RUN git submodule update
-RUN ant
-RUN mkdir /var/lib/floodlight
-RUN chmod 777 /var/lib/floodlight
-RUN apt-get clean
+RUN apt-get --assume-yes update && \
+		apt-get --assume-yes install build-essential ant maven python-dev \
+																	openjdk-8-jdk git && \
+		git clone git://github.com/floodlight/floodlight.git && \
+		cd floodlight && \
+		git submodule init && \
+		git submodule update && \
+		ant && \
+		mkdir /var/lib/floodlight && \
+		chmod 777 /var/lib/floodlight && \
+		apt-get clean
+RUN mkdir /var/logs && \
+		echo "java -jar target/floodlight.jar > var/logs/floodlight.log" > /run_floodlight.sh && \
+		chmod +x /run_floodlight.sh
+RUN touch /var/logs/floodlight.log
 
 CMD ["java","-jar","target/floodlight.jar"]

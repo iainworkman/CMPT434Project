@@ -14,9 +14,10 @@ RUN apt-get --assume-yes update && \
 		mkdir /var/lib/floodlight && \
 		chmod 777 /var/lib/floodlight && \
 		apt-get clean
-RUN mkdir /var/logs && \
-		echo "java -jar target/floodlight.jar > var/logs/floodlight.log" > /run_floodlight.sh && \
+RUN mkdir --parents /var/logs/floodlight && \
+		echo \
+			"cd floodlight && java -jar target/floodlight.jar > /var/logs/floodlight.log" > /run_floodlight.sh && \
 		chmod +x /run_floodlight.sh
 RUN touch /var/logs/floodlight.log
 
-CMD ["java","-jar","target/floodlight.jar"]
+CMD /run_floodlight.sh 

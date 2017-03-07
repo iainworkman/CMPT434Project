@@ -1,4 +1,4 @@
-# basic apache server. To use either add or bind mount content under /var/www
+# Floodlight Docker Image which builds from the master branch
 FROM ubuntu:xenial
 
 MAINTAINER Iain Workman <iain.workman@googlemail.com>

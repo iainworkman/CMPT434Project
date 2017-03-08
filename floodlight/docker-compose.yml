@@ -1,7 +1,7 @@
 version: '2'
 services:
   floodlight:
-    image: floodlight:latest
+    build: .
     restart: always
     ports:
       - "8080:8080"

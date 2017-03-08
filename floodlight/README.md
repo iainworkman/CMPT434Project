@@ -9,23 +9,15 @@
 Docker can be obtained through following the instructions at:
 https://docs.docker.com/engine/getstarted/step_one/
 
-## Building the Floodlight Image
-- Navigate to the `floodlight` folder within the clone of this repository:
-
-`$ cd <repo_path>/floodlight`
-- Issue the docker build command (NOTE: Don't forget the period at the end, there):
-
-`$ docker build -t floodlight .`
-- NOTE: This will take a pretty long time. The image has to obtain the apt-cache, install a bunch of development packages, download the source for floodlight (which is BIG), and then do a build.
-- NOTE2: It will look as if the `cloning into floodlight...` step has frozen. It hadn't it just doesn't output from within the docker build script. It will take a while, but it will complete.
-
-## Running Floodlight
+## Runnning the Container
 - Navigate to the `floodlight` folder within the clone of this repository:
 
 `$ cd <repo_path>/floodlight`
 - Run from the docker-compose file:
 
-`$ docker-compose up -d`
+`$ docker build -t floodlight .`
+- NOTE: The first time this is run it will build the image before running. This will take a pretty long time. The image has to obtain the apt-cache, install a bunch of development packages, download the source for floodlight (which is BIG), and then do a build.
+- NOTE2: When building it will look as if the `cloning into floodlight...` step has frozen. It hadn't it just doesn't output from within the docker build script. It will take a while, but it will complete.
 
 - You can then access the web-ui for floodlight by navigating to:
 

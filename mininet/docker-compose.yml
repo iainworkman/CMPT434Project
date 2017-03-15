@@ -1,0 +1,5 @@
+mininet:
+  build: .
+  restart: always
+  privileged: True
+

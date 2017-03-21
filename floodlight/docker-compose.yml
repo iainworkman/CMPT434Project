@@ -5,10 +5,10 @@ floodlight:
     - "8080:8080"
     - "6653:6653"
 
-mininet:
-  build: ../mininet
-  restart: always
-  privileged: True
-  links:
-    - "floodlight:floodlight"
+#mininet:
+#  build: ../mininet
+#  restart: always
+#  privileged: True
+#  links:
+#    - "floodlight:floodlight"
 

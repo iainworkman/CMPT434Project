@@ -20,4 +20,5 @@ RUN apt-get install -y python-setuptools && \
 		git clone git://github.com/kennethreitz/requests.git && \
 		cd requests && \
 		python setup.py install
+RUN apt-get install -y iputils-ping
 CMD /init.sh 

@@ -92,45 +92,45 @@ class ClonedFloodlightTopology(Topo):
             )
             label_id += 1
 
-        # # Link Switches together
-        # for raw_switch_link in floodlight_switch_links:
-        #     source_dpid = raw_switch_link.get('src-switch').replace(':', '')
-        #     source_port = raw_switch_link.get('src-port')
-        #
-        #     destination_dpid = raw_switch_link.get('dst-switch').replace(':', '')
-        #     destination_port = raw_switch_link.get('dst-port')
-        #
-        #     source_switch = None
-        #     destination_switch = None
-        #
-        #     for switch in cloned_switches:
-        #         if switch[1] == source_dpid:
-        #             source_switch = switch[0]
-        #
-        #         if switch[1] == destination_dpid:
-        #             destination_switch = switch[0]
-        #
-        #     if source_switch and destination_switch:
-        #         self.addLink(source_switch, destination_switch, source_port, destination_port)
-        #
-        # # Clone Hosts
-        # label_id = 1
-        # for raw_device in floodlight_devices:
-        #     # If device has a ipv4 or 6 address it is a host
-        #     print(raw_device)
-        #     if raw_device.get('ipv4') or raw_device.get('ipv6'):
-        #         host = self.addHost('h{}'.format(label_id))
-        #
-        #         # Link host to all attachment points
-        #         attachment_points = raw_device.get('attachmentPoint')
-        #         for attachment_point in attachment_points:
-        #             switch_dpid = attachment_point.get('switch').replace(':', '')
-        #             switch_port = int(attachment_point.get('port'))
-        #
-        #             for switch in cloned_switches:
-        #                 if switch[1] == switch_dpid:
-        #                     self.addLink(host, switch[0], port2=switch_port)
-        #         label_id += 1
+        # Link Switches together
+        for raw_switch_link in floodlight_switch_links:
+            source_dpid = raw_switch_link.get('src-switch').replace(':', '')
+            source_port = raw_switch_link.get('src-port')
+
+            destination_dpid = raw_switch_link.get('dst-switch').replace(':', '')
+            destination_port = raw_switch_link.get('dst-port')
+
+            source_switch = None
+            destination_switch = None
+
+            for switch in cloned_switches:
+                if switch[1] == source_dpid:
+                    source_switch = switch[0]
+
+                if switch[1] == destination_dpid:
+                    destination_switch = switch[0]
+
+            if source_switch and destination_switch:
+                self.addLink(source_switch, destination_switch, source_port, destination_port)
+
+        # Clone Hosts
+        label_id = 1
+        for raw_device in floodlight_devices:
+            # If device has a ipv4 or 6 address it is a host
+            print(raw_device)
+            if raw_device.get('ipv4') or raw_device.get('ipv6'):
+                host = self.addHost('h{}'.format(label_id))
+
+                # Link host to all attachment points
+                attachment_points = raw_device.get('attachmentPoint')
+                for attachment_point in attachment_points:
+                    switch_dpid = attachment_point.get('switch').replace(':', '')
+                    switch_port = int(attachment_point.get('port'))
+
+                    for switch in cloned_switches:
+                        if switch[1] == switch_dpid:
+                            self.addLink(host, switch[0], port2=switch_port)
+                label_id += 1
 
 
 def print_usage():
@@ -140,7 +140,6 @@ def print_usage():
 
 
 def run():
-
     if len(sys.argv) != 5:
         print_usage()
         return 1

@@ -1,0 +1,29 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    config.vm.box = "bento/ubuntu-16.04"
+
+    config.vm.provider "virtualbox" do |v|
+        v.memory = "2048"
+        v.cpus   = "4"
+    end
+
+    # for production floodlight
+    # host uri: http://localhost:8100/ui/pages/index.html
+    config.vm.network "forwarded_port", guest: 8080, host: 8100
+
+    # for clone floodlight
+    # host uri: http://localhost:8200/ui/pages/index.html
+    config.vm.network "forwarded_port", guest: 8081, host: 8200
+
+    $project = "/home/vagrant/project"
+
+    config.vm.synced_folder "../", "#{$project}"
+
+    config.vm.provision :shell, path: "bootstrap.sh"
+
+    config.vm.provision :shell, inline: "cd #{$project}/production_network && docker-compose up -d", run: "always"
+    config.vm.provision :shell, inline: "cd #{$project}/clone_network && docker-compose up -d", run: "always"
+end
+

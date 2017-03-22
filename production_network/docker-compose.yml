@@ -10,6 +10,7 @@ floodlight:
     - "./production_network.py:/production_network.py"
   ports:
     - "8080:8080"
+    - "6653:6653"
 
 #mininet:
 #  container_name: production_topology

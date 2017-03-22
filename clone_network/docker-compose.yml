@@ -7,6 +7,7 @@ floodlight:
   restart: always
   ports:
     - "8081:8080"
+    - "6654:6653"
   volumes:
     - "./init.sh:/init.sh"
     - "./clone_network.py:/clone_network.py"

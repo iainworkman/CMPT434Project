@@ -152,8 +152,9 @@ def run():
     simulation_controller = RemoteController('c', clone_controller_ip, clone_openflow_port)
     production_controller = FloodlightController(prod_controller_ip, prod_rest_port)
 
+    topo = ClonedFloodlightTopology(production_controller)
     cloned_network = Mininet(
-        topo=ClonedFloodlightTopology(production_controller),
+        topo=topo,
         host=CPULimitedHost,
         controller=None
     )
@@ -161,7 +162,41 @@ def run():
     cloned_network.addController(simulation_controller)
     cloned_network.start()
 
-    CLI(cloned_network)
+    while True:
+        line = sys.stdin.readline().strip(" \t\n").lower()
+
+        #line = input("Enter a command: ").strip(" \t\n").lower()
+        if line == "mn":
+            CLI(cloned_network)
+        elif "addlink" in line:
+            pass #TODO: Add a link. What inputs will they give on the command line?
+            # self.addLink(source_switch, destination_switch, source_port, destination_port)
+        elif "addhost" in line:
+            new_host = line.split()[1]
+            # restart?
+            print "stopping mininet"
+            try:
+                cloned_network.stop()
+            except SystemExit:
+                print "fuck you mininet, not trying hard enough"
+
+            print "adding new host %s" % new_host
+            topo.addHost(new_host)
+            cloned_network = Mininet(
+                topo=topo,
+                host=CPULimitedHost,
+                controller=simulation_controller
+            )
+
+            cloned_network.start()
+        elif "pingall" in line:
+            cloned_network.pingAll()
+        elif line == "exit":
+            print "Exiting\n"
+            break
+        else:
+            print "Nah. Can't let you do that.\n"
+
     cloned_network.stop()
 
 # if the script is run directly (sudo custom/optical.py):

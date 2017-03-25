@@ -11,6 +11,7 @@ floodlight:
   volumes:
     - "./init.sh:/init.sh"
     - "./clone_network.py:/clone_network.py"
+    - "./mininet/mininet:/mininet"
     - "./floodlightdefault.properties:/floodlight/src/main/resources/floodlightdefault.properties"
 
 #mininet:

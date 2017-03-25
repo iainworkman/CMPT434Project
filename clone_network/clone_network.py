@@ -8,6 +8,8 @@ from mininet.topo import Topo
 
 from requests import get
 
+import random
+import string
 
 class FloodlightController:
 
@@ -139,6 +141,9 @@ def print_usage():
     )
 
 
+def randdpid():
+    return ''.join(random.choice(string.digits) for _ in range(16))
+
 def run():
     if len(sys.argv) != 5:
         print_usage()
@@ -163,35 +168,50 @@ def run():
     cloned_network.start()
 
     while True:
-        line = sys.stdin.readline().strip(" \t\n").lower()
+        line = sys.stdin.readline().strip(" \t\n").lower().split()
 
         #line = input("Enter a command: ").strip(" \t\n").lower()
-        if line == "mn":
+        if line[0] == "mn":
             CLI(cloned_network)
-        elif "addlink" in line:
-            pass #TODO: Add a link. What inputs will they give on the command line?
-            # self.addLink(source_switch, destination_switch, source_port, destination_port)
-        elif "addhost" in line:
-            new_host = line.split()[1]
-            # restart?
-            print "stopping mininet"
-            try:
-                cloned_network.stop()
-            except SystemExit:
-                print "fuck you mininet, not trying hard enough"
-
-            print "adding new host %s" % new_host
-            topo.addHost(new_host)
+        elif line[0] == "commit":
+            cloned_network.stop()
+            # do network modifications
             cloned_network = Mininet(
                 topo=topo,
                 host=CPULimitedHost,
                 controller=simulation_controller
             )
-
             cloned_network.start()
-        elif "pingall" in line:
-            cloned_network.pingAll()
-        elif line == "exit":
+        elif line[0] == "add":
+            if line[1] == "host":
+                if (len(line) != 3):
+                    print "usage: add host NAME"
+                else:
+                    if line[2] in topo.nodes():
+                        print "node already in topology"
+                    else:
+                        topo.addHost(line[2])
+            elif line[1] == "switch":
+                if (len(line) != 3):
+                    print "usage: add switch NAME"
+                else:
+                    if line[2] in topo.nodes():
+                        print "node already in topology"
+                    else:
+                        topo.addSwitch(line[2], dpid=randdpid())
+            elif line[1] == "link":
+                if (len(line) != 4):
+                    print "usage: add link NODE NODE"
+                else:
+                    try:
+                        source_node = topo.nodeInfo(line[2])
+                        destination_node = topo.nodeInfo(line[3])
+                        topo.addLink(line[2], line[3])
+                    except Exception as e:
+                        print "Error: Must give names for two valid nodes"
+            else:
+                print "add a what?"
+        elif line == "quit":
             print "Exiting\n"
             break
         else:

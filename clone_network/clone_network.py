@@ -86,13 +86,12 @@ class ClonedFloodlightTopology(Topo):
         cloned_switches = []
 
         # Clone Switches
-        label_id = 1
         for raw_switch in floodlight_switches:
             dpid = raw_switch.get('switchDPID').replace(':', '')
+            labelid = "s" + str(int(dpid, 16))
             cloned_switches.append(
-                (self.addSwitch('s{}'.format(label_id), dpid=str(dpid)), dpid)
+                (self.addSwitch(labelid, dpid=str(dpid)), dpid)
             )
-            label_id += 1
 
         # Link Switches together
         for raw_switch_link in floodlight_switch_links:

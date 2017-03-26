@@ -11,6 +11,10 @@ from requests import get
 import random
 import string
 
+
+
+devices, switches, links = [], [], []
+
 class FloodlightController:
 
     def __init__(self, ip, port):
@@ -66,72 +70,27 @@ Instructions to run the topo:
     2. run: sudo -E python clone_network.py <prod_controller_ip> <prod_rest_port> <clone_controller_ip> <clone_openflow_port>
 """
 
-
 class ClonedFloodlightTopology(Topo):
     """Cloned network topology which is based upon the provided floodlight controller."""
 
-    def __init__(self, floodlight_controller, **opts):
+    def __init__(self, floodlight_controller, devices=[], switches=[], links=[], **opts):
         """Create custom topo."""
 
         # Initialize topology
         # It uses the constructor for the Topo cloass
         super(ClonedFloodlightTopology, self).__init__(**opts)
-
-        floodlight_switches = floodlight_controller.switches
-
-        # Includes switches too, need to check if has ipv4 or ipv6 address: If it does it's a host
-        floodlight_devices = floodlight_controller.devices
-        floodlight_switch_links = floodlight_controller.switch_links
-
-        cloned_switches = []
-
         # Clone Switches
-        for raw_switch in floodlight_switches:
-            dpid = raw_switch.get('switchDPID').replace(':', '')
-            labelid = "s" + str(int(dpid, 16))
-            cloned_switches.append(
-                (self.addSwitch(labelid, dpid=str(dpid)), dpid)
-            )
+        for switch in switches:
+           self.addSwitch(switch["label"], dpid=str(switch["max"]))
 
-        # Link Switches together
-        for raw_switch_link in floodlight_switch_links:
-            source_dpid = raw_switch_link.get('src-switch').replace(':', '')
-            source_port = raw_switch_link.get('src-port')
+        # clone devices
+        for device in devices:
+            self.addHost(device["label"])
 
-            destination_dpid = raw_switch_link.get('dst-switch').replace(':', '')
-            destination_port = raw_switch_link.get('dst-port')
+        #clone links
+        for link in links:
+            self.addLink(link["src_mac"], link["src_port"], link["dst_mac"], link["dst_port"])
 
-            source_switch = None
-            destination_switch = None
-
-            for switch in cloned_switches:
-                if switch[1] == source_dpid:
-                    source_switch = switch[0]
-
-                if switch[1] == destination_dpid:
-                    destination_switch = switch[0]
-
-            if source_switch and destination_switch:
-                self.addLink(source_switch, destination_switch, source_port, destination_port)
-
-        # Clone Hosts
-        label_id = 1
-        for raw_device in floodlight_devices:
-            # If device has a ipv4 or 6 address it is a host
-            print(raw_device)
-            if raw_device.get('ipv4') or raw_device.get('ipv6'):
-                host = self.addHost('h{}'.format(label_id))
-
-                # Link host to all attachment points
-                attachment_points = raw_device.get('attachmentPoint')
-                for attachment_point in attachment_points:
-                    switch_dpid = attachment_point.get('switch').replace(':', '')
-                    switch_port = int(attachment_point.get('port'))
-
-                    for switch in cloned_switches:
-                        if switch[1] == switch_dpid:
-                            self.addLink(host, switch[0], port2=switch_port)
-                label_id += 1
 
 
 def print_usage():
@@ -143,11 +102,109 @@ def print_usage():
 def randdpid():
     return ''.join(random.choice(string.digits) for _ in range(16))
 
+
+# return true if successfully deleted a node, false if not
+def delete_node(node_label):
+    device = next([d for d in devices if d["label"] == node_label], None)
+    if device:
+        return delete_device(device)
+    switch = next([s for s in switches if s["label"] == node_label], None)
+    if switch:
+        return delete_switch(switch)
+    return False
+
+
+def delete_device(device):
+    global devices
+    global links
+    try:
+        devices.remove(device)
+    except ValueError:
+        return False
+
+    # Remove all links associated with that device.
+    links_to_remove = []
+    for link in links:
+        if link["src_mac"] == device["mac"]:
+            links_to_remove.append(link)
+        elif link["dst_mac"] == device["mac"]:
+            links_to_remove.append(link)
+    links = [l for l in links if l not in links_to_remove]
+    return True
+
+
+def delete_switch(switch):
+    global switches
+    global links
+    try:
+        switches.remove(switch)
+    except ValueError:
+        return False
+
+    # Remove all links associated with that switch.
+    links_to_remove = []
+    for link in links:
+        if link["src_mac"] == switch["mac"]:
+            links_to_remove.append(link)
+        elif link["dst_mac"] == switch["mac"]:
+            links_to_remove.append(link)
+    links = [l for l in links if l not in links_to_remove]
+    return True
+
+
+def delete_link(node1, node2):
+    global links
+    for link in links:
+        if (link["src_label"] == node1 and link["dst_label"] == node2) \
+                or (link["src_label"] == node2 and link["dst_label"] == node1):
+            links.remove(link)
+            return True
+    return False
+
+
+def add_device(label, mac):
+    global devices, switches
+    if label in [device["label"] for device in devices] or label in [switch["label"] for switch in switches]:
+        return False
+    devices.append({"label": label, "mac": mac})
+    return True
+
+
+def add_switch(label, mac):
+    global switches, devices
+    if label in [device["label"] for device in devices] or label in [switch["label"] for switch in switches]:
+        return False
+    switches.append({"label": label, "mac": mac})
+    return True
+
+
+# Return true if the link could be added, false if it couldn't.
+def add_link(src_label, dst_label):
+    """
+    :return: True if the link could be added, false if not. It may fail to add due to a device/switch with the given
+            macs not existing.
+    """
+    global devices, switches, links
+    # don't allow circular links
+    macs = [device["mac"] for device in devices] + [switch["mac"] for switch in switches]
+
+    nodes = [n1 for n1 in devices] + [n2 for n2 in switches]
+    source_nodes = [n for n in nodes if n["src_label"] == src_label]
+    destination_nodes = [n for n in nodes if n["dst_label"] == dst_label]
+    if not source_nodes or not destination_nodes:
+        return False
+    source_node = source_nodes[0]
+    destination_node = destination_nodes[0]
+    links.append({"src_mac": source_node["mac"], "src_port": None, "dst_mac": destination_node["mac"], "dst_port": None})
+    return True
+
+
 def run():
     if len(sys.argv) != 5:
         print_usage()
         return 1
 
+    global devices, switches, links
     prod_controller_ip = sys.argv[1]
     prod_rest_port = sys.argv[2]
     clone_controller_ip = sys.argv[3]
@@ -156,7 +213,9 @@ def run():
     simulation_controller = RemoteController('c', clone_controller_ip, clone_openflow_port)
     production_controller = FloodlightController(prod_controller_ip, prod_rest_port)
 
-    topo = ClonedFloodlightTopology(production_controller)
+    devices, switches, links = production_controller.devices, production_controller.switches, production_controller.links
+    topo = ClonedFloodlightTopology(production_controller, devices=devices, switches=switches, links=links)
+
     cloned_network = Mininet(
         topo=topo,
         host=CPULimitedHost,
@@ -175,39 +234,48 @@ def run():
         elif line[0] == "commit":
             cloned_network.stop()
             # do network modifications
+            topo = ClonedFloodlightTopology(production_controller, devices=devices, switches=switches, links=links)
             cloned_network = Mininet(
                 topo=topo,
                 host=CPULimitedHost,
                 controller=simulation_controller
             )
             cloned_network.start()
+        elif line[0] == "del":
+            if len(line) < 2:
+                print "Error: Must give the name of the node to delete"
+                continue
+            if delete_node(line[1]):
+                continue
+            elif len(line) > 3 and delete_link(line[2], line[3]):
+                continue
+            print "Failed to delete Node."
+
         elif line[0] == "add":
             if line[1] == "host":
                 if (len(line) != 3):
                     print "usage: add host NAME"
+                    continue
                 else:
-                    if line[2] in topo.nodes():
-                        print "node already in topology"
-                    else:
-                        topo.addHost(line[2])
+                    if not add_device(line[2], randdpid()):
+                        print "ERROR: FAILED TO ADD HOST"
             elif line[1] == "switch":
                 if (len(line) != 3):
                     print "usage: add switch NAME"
+                    continue
                 else:
                     if line[2] in topo.nodes():
                         print "node already in topology"
                     else:
-                        topo.addSwitch(line[2], dpid=randdpid())
+                        if not add_switch(line[2], randdpid()):
+                            print "ERROR: FAILED TO ADD SWITCH"
             elif line[1] == "link":
                 if (len(line) != 4):
                     print "usage: add link NODE NODE"
+                    continue
                 else:
-                    try:
-                        source_node = topo.nodeInfo(line[2])
-                        destination_node = topo.nodeInfo(line[3])
-                        topo.addLink(line[2], line[3])
-                    except Exception as e:
-                        print "Error: Must give names for two valid nodes"
+                    if not add_link(line[2], line[3]):
+                        print "ERROR: FAILED TO ADD LINK"
             else:
                 print "add a what?"
         elif line == "quit":

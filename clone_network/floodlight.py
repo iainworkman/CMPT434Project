@@ -85,7 +85,7 @@ class FloodlightController:
             for raw in raw_d.get('attachmentPoint'):
                 link = {
                     'src_mac': raw_d.get('mac')[0].replace(':',''),
-                    'src_port': 0,
+                    'src_port': None,
                     'dst_mac': raw.get('switch').replace(':',''),
                     'dst_port': raw.get('port')
                 }

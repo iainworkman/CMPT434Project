@@ -202,6 +202,18 @@ def run():
             if len(line) < 2:
                 print "Error: Must give the name of the node to delete"
                 continue
+            if len(line) > 2 and line[1] in ["host", "switch", "link"]:
+                if line[1] == "host" or line[1] == "switch":
+                    err = delete_node(line[2])
+                    if err:
+                        print err
+                    continue
+                elif len(line) > 3:
+                    err = add_link(line[2], line[3])
+                    if err:
+                        print err
+                    continue
+                print "Could not recognize delete command."
             elif len(line) > 3:
                 err = delete_link(line[2], line[3])
                 if err:

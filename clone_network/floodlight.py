@@ -1,8 +1,6 @@
 from requests import get
 
-
 class FloodlightController:
-
     def __init__(self, ip, port):
         self.ip = ip
         self.port = port
@@ -12,28 +10,90 @@ class FloodlightController:
 
     @property
     def switches(self):
+        """
+        switch = {
+            "label": None,
+            "mac": None
+        }
+        """
         if not self._switches:
-            self._switches = self._floodlight_request('/wm/core/controller/switches/json').json()
+            self._switches = self._request('/wm/core/controller/switches/json')
 
-        return self._switches
+        switches = []
+
+        for raw in self._switches:
+            mac = raw.get('switchDPID').replace(':','')
+            switch = {
+                'label': 's' + str(int(mac)),
+                'mac': mac
+            }
+            switches.append(switch)
+
+        return switches
 
     @property
     def devices(self):
+        """
+        device = {
+            "label": None,
+            "mac": None,
+        }
+        """
         if not self._devices:
+            self._devices = self._request('/wm/device/').get('devices')
 
-            self._devices = self._floodlight_request('/wm/device/').json()
+        devices = []
+        # TODO: find a way to figure out host id from MAC
+        label_id = 1
+        for raw in self._devices:
+            mac = raw.get('mac')[0].replace(':','')
+            device = {
+                'label': 'h' + str(label_id),
+                'mac': mac
+            }
+            devices.append(device)
+            label_id += 1
 
-        return self._devices
+        return devices
 
     @property
-    def switch_links(self):
-
+    def links(self):
+        """
+        link = {
+            "src_mac": None,
+            "src_port": None,
+            "dst_mac": None,
+            "dst_port": None
+        }
+        """
         if not self._switch_links:
-            self._switch_links = self._floodlight_request('/wm/topology/links/json').json()
+            self._switch_links = self._request('/wm/topology/links/json')
+        if not self._devices:
+            self._devices = self._request('/wm/device/')
 
-        return self._switch_links
+        links = []
+        for raw in self._switch_links:
+            link = {
+                'src_mac': raw.get('src-switch').replace(':',''),
+                'src_port': raw.get('src-port'),
+                'dst_mac': raw.get('dst-switch').replace(':',''),
+                'dst_port': raw.get('dst-port')
+            }
+            links.append(link)
 
-    def _floodlight_request(self, endpoint):
+        for raw_d in self._devices:
+            for raw in raw_d.get('attachmentPoint'):
+                link = {
+                    'src_mac': raw_d.get('mac')[0].replace(':',''),
+                    'src_port': 0,
+                    'dst_mac': raw.get('switch').replace(':',''),
+                    'dst_port': raw.get('port')
+                }
+                links.append(link)
+
+        return links
+
+    def _request(self, endpoint):
 
         full_url = 'http://{controller_ip}:{controller_port}{endpoint}'.format(
             controller_ip=self.ip,
@@ -45,4 +105,11 @@ class FloodlightController:
 
         response.raise_for_status()
 
-        return response
+        return response.json()
+
+if __name__ == "__main__":
+    f = FloodlightController("localhost", "8100")
+    print(f.switches)
+    print(f.devices)
+    print(f.links)
+

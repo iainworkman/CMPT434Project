@@ -56,38 +56,46 @@ class FloodlightController:
 
         return devices
 
+    def _get_label_from_mac(self, mac):
+        nodes = self.devices + self.switches
+        return [ n["label"] for n in nodes if n["mac"] == mac ][0]
+
     @property
     def links(self):
         """
         link = {
-            "src_mac": None,
+            "src_label": None,
             "src_port": None,
-            "dst_mac": None,
+            "dst_label": None,
             "dst_port": None
         }
         """
         if not self._switch_links:
             self._switch_links = self._request('/wm/topology/links/json')
         if not self._devices:
-            self._devices = self._request('/wm/device/')
+            self._devices = self._request('/wm/device/').get('devices')
 
         links = []
         for raw in self._switch_links:
+            src_mac = raw.get('src-switch').replace(':','')
+            dst_mac = raw.get('dst-switch').replace(':','')
             link = {
-                'src_mac': raw.get('src-switch').replace(':',''),
-                'src_port': raw.get('src-port'),
-                'dst_mac': raw.get('dst-switch').replace(':',''),
-                'dst_port': raw.get('dst-port')
+                'src_label': self._get_label_from_mac(src_mac),
+                'src_port': int(raw.get('src-port')),
+                'dst_label': self._get_label_from_mac(dst_mac),
+                'dst_port': int(raw.get('dst-port'))
             }
             links.append(link)
 
         for raw_d in self._devices:
             for raw in raw_d.get('attachmentPoint'):
+                src_mac = raw_d.get('mac')[0].replace(':','')
+                dst_mac = raw.get('switch').replace(':','')
                 link = {
-                    'src_mac': raw_d.get('mac')[0].replace(':',''),
+                    'src_label': self._get_label_from_mac(src_mac),
                     'src_port': None,
-                    'dst_mac': raw.get('switch').replace(':',''),
-                    'dst_port': raw.get('port')
+                    'dst_label': self._get_label_from_mac(dst_mac),
+                    'dst_port': int(raw.get('port'))
                 }
                 links.append(link)
 

@@ -6,60 +6,13 @@ from mininet.node import CPULimitedHost
 from mininet.node import RemoteController
 from mininet.topo import Topo
 
-from requests import get
-
 import random
 import string
 
-
+from floodlight import FloodlightController
 
 devices, switches, links = [], [], []
 
-class FloodlightController:
-
-    def __init__(self, ip, port):
-        self.ip = ip
-        self.port = port
-        self._switches = None
-        self._devices = None
-        self._switch_links = None
-
-    @property
-    def switches(self):
-        if not self._switches:
-            self._switches = self._floodlight_request('/wm/core/controller/switches/json').json()
-
-        return self._switches
-
-    @property
-    def devices(self):
-        if not self._devices:
-
-            self._devices = self._floodlight_request('/wm/device/').json().get('devices')
-
-        return self._devices
-
-    @property
-    def switch_links(self):
-
-        if not self._switch_links:
-            self._switch_links = self._floodlight_request('/wm/topology/links/json').json()
-
-        return self._switch_links
-
-    def _floodlight_request(self, endpoint):
-
-        full_url = 'http://{controller_ip}:{controller_port}{endpoint}'.format(
-            controller_ip=self.ip,
-            controller_port=self.port,
-            endpoint=endpoint
-        )
-
-        response = get(full_url)
-
-        response.raise_for_status()
-
-        return response
 """
 Prerequisites:
     - Must be run in an environment with mininet installed and in the $PATH
@@ -81,15 +34,16 @@ class ClonedFloodlightTopology(Topo):
         super(ClonedFloodlightTopology, self).__init__(**opts)
         # Clone Switches
         for switch in switches:
-           self.addSwitch(switch["label"], dpid=str(switch["max"]))
+           self.addSwitch(switch["label"], dpid=str(switch["mac"]))
 
         # clone devices
         for device in devices:
+            print(device["label"])
             self.addHost(device["label"])
 
         #clone links
         for link in links:
-            self.addLink(link["src_mac"], link["src_port"], link["dst_mac"], link["dst_port"])
+            self.addLink(link["src_label"], link["dst_label"], link["src_port"], link["dst_port"])
 
 
 
@@ -105,12 +59,17 @@ def randdpid():
 
 # return true if successfully deleted a node, false if not
 def delete_node(node_label):
-    device = next([d for d in devices if d["label"] == node_label], None)
-    if device:
-        return delete_device(device)
-    switch = next([s for s in switches if s["label"] == node_label], None)
-    if switch:
-        return delete_switch(switch)
+    global devices
+    global switches
+
+    devs = [d for d in devices if d["label"] == node_label]
+    if len(devs) > 0:
+        return delete_device(devs[0])
+
+    sws =  [s for s in switches if s["label"] == node_label]
+    if len(sws) > 0:
+        return delete_switch(sws[0])
+
     return False
 
 
@@ -125,9 +84,9 @@ def delete_device(device):
     # Remove all links associated with that device.
     links_to_remove = []
     for link in links:
-        if link["src_mac"] == device["mac"]:
+        if link["src_label"] == device["label"]:
             links_to_remove.append(link)
-        elif link["dst_mac"] == device["mac"]:
+        elif link["dst_label"] == device["label"]:
             links_to_remove.append(link)
     links = [l for l in links if l not in links_to_remove]
     return True
@@ -144,9 +103,9 @@ def delete_switch(switch):
     # Remove all links associated with that switch.
     links_to_remove = []
     for link in links:
-        if link["src_mac"] == switch["mac"]:
+        if link["src_label"] == switch["label"]:
             links_to_remove.append(link)
-        elif link["dst_mac"] == switch["mac"]:
+        elif link["dst_label"] == switch["label"]:
             links_to_remove.append(link)
     links = [l for l in links if l not in links_to_remove]
     return True
@@ -189,13 +148,16 @@ def add_link(src_label, dst_label):
     macs = [device["mac"] for device in devices] + [switch["mac"] for switch in switches]
 
     nodes = [n1 for n1 in devices] + [n2 for n2 in switches]
-    source_nodes = [n for n in nodes if n["src_label"] == src_label]
-    destination_nodes = [n for n in nodes if n["dst_label"] == dst_label]
+    source_nodes = [n for n in nodes if n["label"] == src_label]
+    destination_nodes = [n for n in nodes if n["label"] == dst_label]
     if not source_nodes or not destination_nodes:
         return False
-    source_node = source_nodes[0]
-    destination_node = destination_nodes[0]
-    links.append({"src_mac": source_node["mac"], "src_port": None, "dst_mac": destination_node["mac"], "dst_port": None})
+    links.append({
+        "src_label": src_label,
+        "src_port": None,
+        "dst_label": dst_label,
+        "dst_port": None
+    })
     return True
 
 
@@ -205,6 +167,7 @@ def run():
         return 1
 
     global devices, switches, links
+
     prod_controller_ip = sys.argv[1]
     prod_rest_port = sys.argv[2]
     clone_controller_ip = sys.argv[3]
@@ -290,5 +253,4 @@ def run():
 if __name__ == '__main__':
     setLogLevel('info')
     run()
-
 

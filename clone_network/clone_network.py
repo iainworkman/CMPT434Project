@@ -66,20 +66,17 @@ def delete_node(node_label):
     if len(devs) > 0:
         return delete_device(devs[0])
 
-    sws =  [s for s in switches if s["label"] == node_label]
+    sws = [s for s in switches if s["label"] == node_label]
     if len(sws) > 0:
         return delete_switch(sws[0])
 
-    return False
+    return "Failed to delete node. It is not a switch or a host"
 
 
 def delete_device(device):
     global devices
     global links
-    try:
-        devices.remove(device)
-    except ValueError:
-        return False
+    devices = [d for d in devices if d["label"] != device["label"]]
 
     # Remove all links associated with that device.
     links_to_remove = []
@@ -89,16 +86,13 @@ def delete_device(device):
         elif link["dst_label"] == device["label"]:
             links_to_remove.append(link)
     links = [l for l in links if l not in links_to_remove]
-    return True
+    return ""
 
 
 def delete_switch(switch):
     global switches
     global links
-    try:
-        switches.remove(switch)
-    except ValueError:
-        return False
+    switches = [s for s in switches if s["label"] != switch["label"]]
 
     # Remove all links associated with that switch.
     links_to_remove = []
@@ -108,7 +102,7 @@ def delete_switch(switch):
         elif link["dst_label"] == switch["label"]:
             links_to_remove.append(link)
     links = [l for l in links if l not in links_to_remove]
-    return True
+    return ""
 
 
 def delete_link(node1, node2):
@@ -117,24 +111,24 @@ def delete_link(node1, node2):
         if (link["src_label"] == node1 and link["dst_label"] == node2) \
                 or (link["src_label"] == node2 and link["dst_label"] == node1):
             links.remove(link)
-            return True
-    return False
+            return "Failed to remove link from links list."
+    return ""
 
 
 def add_device(label, mac):
     global devices, switches
     if label in [device["label"] for device in devices] or label in [switch["label"] for switch in switches]:
-        return False
+        return "Failed to add host. Host already exists"
     devices.append({"label": label, "mac": mac})
-    return True
+    return ""
 
 
 def add_switch(label, mac):
     global switches, devices
     if label in [device["label"] for device in devices] or label in [switch["label"] for switch in switches]:
-        return False
+        return "Failed to add switch. Switch already exists"
     switches.append({"label": label, "mac": mac})
-    return True
+    return ""
 
 
 # Return true if the link could be added, false if it couldn't.
@@ -151,14 +145,14 @@ def add_link(src_label, dst_label):
     source_nodes = [n for n in nodes if n["label"] == src_label]
     destination_nodes = [n for n in nodes if n["label"] == dst_label]
     if not source_nodes or not destination_nodes:
-        return False
+        return "Failed to add link. Either source or destination does not exist."
     links.append({
         "src_label": src_label,
         "src_port": None,
         "dst_label": dst_label,
         "dst_port": None
     })
-    return True
+    return ""
 
 
 def run():
@@ -208,20 +202,25 @@ def run():
             if len(line) < 2:
                 print "Error: Must give the name of the node to delete"
                 continue
-            if delete_node(line[1]):
+            elif len(line) > 3:
+                err = delete_link(line[2], line[3])
+                if err:
+                    print err
                 continue
-            elif len(line) > 3 and delete_link(line[2], line[3]):
+            else:
+                err = delete_node(line[1])
+                if err:
+                    print err
                 continue
-            print "Failed to delete Node."
-
         elif line[0] == "add":
             if line[1] == "host":
                 if (len(line) != 3):
                     print "usage: add host NAME"
                     continue
                 else:
-                    if not add_device(line[2], randdpid()):
-                        print "ERROR: FAILED TO ADD HOST"
+                    err = add_device(line[2], randdpid())
+                    if err:
+                        print err
             elif line[1] == "switch":
                 if (len(line) != 3):
                     print "usage: add switch NAME"
@@ -230,15 +229,17 @@ def run():
                     if line[2] in topo.nodes():
                         print "node already in topology"
                     else:
-                        if not add_switch(line[2], randdpid()):
-                            print "ERROR: FAILED TO ADD SWITCH"
+                        err = add_switch(line[2], randdpid())
+                        if err:
+                            print err
             elif line[1] == "link":
                 if (len(line) != 4):
                     print "usage: add link NODE NODE"
                     continue
                 else:
-                    if not add_link(line[2], line[3]):
-                        print "ERROR: FAILED TO ADD LINK"
+                    err = add_link(line[2], line[3])
+                    if err:
+                        print err
             else:
                 print "add a what?"
         elif line == "quit":

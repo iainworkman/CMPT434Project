@@ -1,3 +1,6 @@
 [submodule "clone_network/mininet"]
 	path = clone_network/mininet
 	url = https://github.com/jpas/mininet.git
+[submodule "src/lib/mininet"]
+	path = src/lib/mininet
+	url = https://github.com/jpas/mininet.git

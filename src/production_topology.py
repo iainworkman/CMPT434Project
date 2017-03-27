@@ -1,3 +1,5 @@
+from argparse import ArgumentParser
+
 from mininet.node import CPULimitedHost
 from mininet.topo import Topo
 from mininet.net import Mininet
@@ -90,8 +92,20 @@ class ProductionNetworkTopology(Topo):
         self.addLink(s6, s7)
 
 
+def getargs():
+    parser = ArgumentParser(
+        description="FILL ME IN" # TODO
+    )
+
+    parser.add_argument("host", type=str, default="localhost")
+    parser.add_argument("-p", "--port", type=int, default=6653)
+
+    return parser.parse_args()
+
 def run():
-    production_controller = RemoteController('c', '127.0.0.1', 6653)
+    args = getargs()
+
+    production_controller = RemoteController('c', args.host, args.port)
     production_network = Mininet(topo=ProductionNetworkTopology(), host=CPULimitedHost, controller=production_controller)
     production_network.start()
 

@@ -22,7 +22,7 @@ services:
       - './src:/src'
     command: [
       /src/wait-for-floodlight.sh, production_ctl,
-      python, /src/production_topology.py, production_ctl
+      python, -E, /src/production_topology.py, production_ctl
     ]
 
 
@@ -38,5 +38,5 @@ services:
       /src/wait-for-floodlight.sh, production_ctl,
       /src/wait-for-floodlight.sh, clone_ctl,
       /src/wait-a-little-bit.sh, '3',
-      python, /src/clone_network.py, production_ctl, '8080', clone_ctl, '6653'
+      python, -E, /src/clone_network.py, production_ctl, '8080', clone_ctl, '6653'
     ]

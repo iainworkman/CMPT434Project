@@ -23,7 +23,8 @@ Vagrant.configure("2") do |config|
 
     config.vm.provision :shell, path: "bootstrap.sh"
 
-    config.vm.provision :shell, inline: "cd #{$project}/production_network && docker-compose up -d", run: "always"
-    config.vm.provision :shell, inline: "cd #{$project}/clone_network && docker-compose up -d", run: "always"
+    config.vm.provision :shell, inline: "cd #{$project} && docker-compose up -d", run: "always"
+    #config.vm.provision :shell, inline: "cd #{$project}/production_network && docker-compose up -d", run: "always"
+    #config.vm.provision :shell, inline: "cd #{$project}/clone_network && docker-compose up -d", run: "always"
 end
 

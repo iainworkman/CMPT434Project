@@ -14,10 +14,11 @@ RUN apt-get --assume-yes update && \
 		mkdir /var/lib/floodlight && \
 		chmod 777 /var/lib/floodlight && \
 		apt-get clean
-RUN mkdir --parents /var/logs/floodlight && \
-		echo \
-			"cd floodlight && java -jar target/floodlight.jar > /var/logs/floodlight.log" > /run_floodlight.sh && \
-		chmod +x /run_floodlight.sh
-RUN touch /var/logs/floodlight.log
-
-CMD /run_floodlight.sh 
+RUN apt-get --assume-yes install net-tools mininet && \
+		apt-get clean
+RUN apt-get install -y python-setuptools && \
+		git clone git://github.com/kennethreitz/requests.git && \
+		cd requests && \
+		python setup.py install
+RUN apt-get install -y iputils-ping
+CMD /init.sh 

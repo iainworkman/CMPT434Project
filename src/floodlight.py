@@ -24,7 +24,7 @@ class FloodlightController:
         for raw in self._switches:
             mac = raw.get('switchDPID').replace(':','')
             switch = {
-                'label': 's' + str(int(mac)),
+                'label': 's' + str(int(mac, 16)),
                 'mac': mac
             }
             switches.append(switch)

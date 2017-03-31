@@ -5,38 +5,12 @@ services:
     build: ./containers/floodlight
     ports:
       - '8080:8080' # web ui http://localhost:8080/ui/pages/topology.html
+      - '6653:6653' # openflow
 
   clone_ctl:
     container_name: 'clone_ctl'
     build: ./containers/floodlight
     ports:
       - '8081:8080' # web ui http://localhost:8081/ui/pages/topology.html
+      - '6654:6653' # openflow
 
-  production_net:
-    container_name: 'production_net'
-    build: ./containers/mininet
-    privileged: true
-    stdin_open: true
-    tty: true
-    volumes:
-      - './src:/src'
-    command: [
-      /src/wait-for-floodlight.sh, production_ctl,
-      python, -E, /src/production_topology.py, production_ctl
-    ]
-
-
-  clone_net:
-    container_name: 'clone_net'
-    build: ./containers/mininet
-    privileged: true
-    stdin_open: true
-    tty: true
-    volumes:
-      - './src:/src'
-    command: [
-      /src/wait-for-floodlight.sh, production_ctl,
-      /src/wait-for-floodlight.sh, clone_ctl,
-      /src/wait-a-little-bit.sh, '3',
-      python, -E, /src/clone_network.py, production_ctl, '8080', clone_ctl, '6653'
-    ]

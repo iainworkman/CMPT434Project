@@ -17,16 +17,27 @@ Instructions to run the topo:
     2. run: sudo -E python production_network.py
 """
 
+class DemoTopology(Topo):
+    def addSwitch(self, i):
+        name = "s" + str(i)
+        dpid = str(i).zfill(16)
+        return Topo.addSwitch(self, name, dpid=dpid)
+
+    def build(self,count=5):
+        hs = [ self.addHost('h%d' % (i+1) ) for i in range(count) ]
+        ss = [ self.addSwitch(i+1)          for i in range(count) ]
+
+        for i in range(count):
+            self.addLink(hs[i], ss[i])
+
+        for i in range(count-1):
+            self.addLink(ss[i], ss[(i+1) % count])
+
+
 class ProductionNetworkTopology(Topo):
     """The production network topology which will be cloned by the Topo cloner."""
 
-    def __init__(self, **opts):
-        """Create custom topo."""
-
-        # Initialize topology
-        # It uses the constructor for the Topo cloass
-        super(ProductionNetworkTopology, self).__init__(**opts)
-
+    def build(self):
         # Add hosts
         h1 = self.addHost('h1')
         h2 = self.addHost('h2')
@@ -97,7 +108,7 @@ def getargs():
         description="FILL ME IN" # TODO
     )
 
-    parser.add_argument("host", type=str, default="localhost")
+    parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("-p", "--port", type=int, default=6653)
 
     return parser.parse_args()
@@ -118,4 +129,8 @@ if __name__ == '__main__':
     setLogLevel('info')
     run()
 
+topos = {
+    'production': ProductionNetworkTopology,
+    'demo': DemoTopology
+}
 

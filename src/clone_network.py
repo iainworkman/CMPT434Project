@@ -25,7 +25,6 @@ Instructions to run the topo:
 
 class ClonedFloodlightTopology(Topo):
     """Cloned network topology which is based upon the provided floodlight controller."""
-
     def __init__(self, floodlight_controller, devices=[], switches=[], links=[], **opts):
         """Create custom topo."""
 
@@ -214,7 +213,7 @@ def run():
                         print err
                     continue
                 elif len(line) > 3:
-                    err = add_link(line[2], line[3])
+                    err = delete_link(line[2], line[3])
                     if err:
                         print err
                     continue

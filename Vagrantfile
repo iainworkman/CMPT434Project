@@ -13,14 +13,14 @@ Vagrant.configure("2") do |config|
     config.vm.network "private_network", type: "dhcp"
 
     $project = "/home/vagrant/project"
-    config.vm.synced_folder "../", "#{$project}"
+    config.vm.synced_folder ".", "#{$project}"
 
-    config.vm.provision :shell, path: "bootstrap-common.sh"
+    config.vm.provision :shell, path: "vagrant/bootstrap-common.sh"
 
     config.vm.define "floodlight" do |h|
         h.vm.hostname = "floodlight"
 
-        h.vm.provision :shell, path: "bootstrap-floodlight.sh"
+        h.vm.provision :shell, path: "vagrant/bootstrap-floodlight.sh"
 
         # production host uri: http://localhost:8180/ui/pages/index.html
         h.vm.network "forwarded_port", guest: 8080, host: 8180
@@ -33,13 +33,13 @@ Vagrant.configure("2") do |config|
     config.vm.define "production" do |h|
         h.vm.hostname = "production"
 
-        h.vm.provision :shell, path: "bootstrap-mininet.sh"
+        h.vm.provision :shell, path: "vagrant/bootstrap-mininet.sh"
     end
 
     config.vm.define "clone" do |h|
         h.vm.hostname = "clone"
 
-        h.vm.provision :shell, path: "bootstrap-mininet.sh"
+        h.vm.provision :shell, path: "vagrant/bootstrap-mininet.sh"
     end
 end
 

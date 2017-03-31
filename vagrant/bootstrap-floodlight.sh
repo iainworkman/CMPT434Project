@@ -2,18 +2,6 @@
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get upgrade -y
-
-# zeroconf hostnames
-apt-get install -y \
-    avahi-daemon
-
-# mininet
-apt-get install -y \
-    python-pip \
-    mininet \
-
-pip install requests
 
 # docker
 apt-get get install -y \
@@ -33,5 +21,11 @@ apt-get update
 
 apt-get install -y \
     docker-ce \
-    docker-compose \
+
+usermod -aG docker vagrant
+
+curl -L "https://github.com/docker/compose/releases/download/1.11.2/docker-compose-$(uname -s)-$(uname -m)" \
+     -o /usr/local/bin/docker-compose
+
+chmod +x /usr/local/bin/docker-compose
 

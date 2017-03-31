@@ -43,7 +43,12 @@ class ClonedFloodlightTopology(Topo):
 
         #clone links
         for link in links:
-            self.addLink(link["src_label"], link["dst_label"], link["src_port"], link["dst_port"])
+            self.addLink(
+                link["src_label"],
+                link["dst_label"],
+                link["src_port"],
+                link["dst_port"]
+            )
 
 
 
@@ -254,7 +259,7 @@ def run():
                         print err
             else:
                 print "add a what?"
-        elif line == "quit":
+        elif line[0] == "quit":
             print "Exiting\n"
             break
         else:

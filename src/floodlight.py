@@ -46,6 +46,8 @@ class FloodlightController:
         # TODO: find a way to figure out host id from MAC
         label_id = 1
         for raw in self._devices:
+            if len(raw.get('attachmentPoint')) == 0:
+                continue
             mac = raw.get('mac')[0].replace(':','')
             device = {
                 'label': 'h' + str(label_id),

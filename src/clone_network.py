@@ -5,6 +5,7 @@ from mininet.net import Mininet
 from mininet.node import CPULimitedHost
 from mininet.node import RemoteController
 from mininet.topo import Topo
+from mininet.clean import cleanup
 
 import random
 import string
@@ -112,11 +113,13 @@ def delete_switch(switch):
 def delete_link(node1, node2):
     global links
     for link in links:
-        if (link["src_label"] == node1 and link["dst_label"] == node2) \
-                or (link["src_label"] == node2 and link["dst_label"] == node1):
+        if (link["src_label"] == node1 and link["dst_label"] == node2):
             links.remove(link)
-            return "Failed to remove link from links list."
-    return ""
+            return ""
+        if (link["src_label"] == node2 and link["dst_label"] == node1):
+            links.remove(link)
+            return ""
+    return "Failed to remove link from links list."
 
 
 def add_device(label, mac):
@@ -194,6 +197,7 @@ def run():
             CLI(cloned_network)
         elif line[0] == "commit":
             cloned_network.stop()
+            cleanup()
             # do network modifications
             topo = ClonedFloodlightTopology(production_controller, devices=devices, switches=switches, links=links)
             cloned_network = Mininet(

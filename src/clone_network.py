@@ -195,6 +195,25 @@ def run():
         #line = input("Enter a command: ").strip(" \t\n").lower()
         if line[0] == "mn":
             CLI(cloned_network)
+        elif line[0] == "help":
+            print("available commands:")
+            print("  add {host,switch} n -- adds a new host or switch called n")
+            print("  add link a b        -- adds a link between a and b")
+            print("  del {host,switch} n -- deletes a host or switch called n")
+            print("  del link a b        -- deletes a link between a and b")
+            print("  commit              -- applies all changes in topology to simulated network")
+            print("  reset               -- resets to initial cloned state")
+        elif line[0] == "reset":
+            cloned_network.stop()
+            cleanup()
+            devices, switches, links = production_controller.devices, production_controller.switches, production_controller.links
+            topo = ClonedFloodlightTopology(production_controller, devices=devices, switches=switches, links=links)
+            cloned_network = Mininet(
+                topo=topo,
+                host=CPULimitedHost,
+                controller=simulation_controller
+            )
+            cloned_network.start()
         elif line[0] == "commit":
             cloned_network.stop()
             cleanup()
